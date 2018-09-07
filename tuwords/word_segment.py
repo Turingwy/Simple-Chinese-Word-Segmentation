@@ -4,21 +4,19 @@ from math import log
 import re
 
 class Segmenter:
-    def __init__(self, dict_path=DICT_PATH):
-        self.dict_path = dict_path
+    def __init__(self, word_freq_dict):
+        self.word_freq_dict = word_freq_dict
         self.prefix_freqs, self.total_freq = self.__read_dict()
 
     def __read_dict(self):
         freqs = {}
         total_freq = 0
-        with open(self.dict_path, 'r', encoding='utf-8') as f:
-            for line in f:
-                word, fq = line.split(' ')[:2]
-                freqs[word] = int(fq)
-                total_freq += int(fq)
-                for k in range(1, len(word)):
-                    if word[:k] not in freqs:
-                        freqs[word[:k]] = 0
+        for word, fq in self.word_freq_dict.items():
+            freqs[word] = int(fq)
+            total_freq += int(fq)
+            for k in range(1, len(word)):
+                if word[:k] not in freqs:
+                    freqs[word[:k]] = 0.01
 
         return freqs, total_freq
 
@@ -44,7 +42,7 @@ class Segmenter:
         probs[len(sentence)] = 0
         while start >= 0:
             for end in dag[start]:
-                curr_prob = log(self.prefix_freqs[sentence[start:end+1]]) - log(self.total_freq) + probs[end+1]
+                curr_prob = log(self.prefix_freqs.get(sentence[start:end+1], 0.01)) - log(self.total_freq) + probs[end+1]
                 if curr_prob > probs[start]:
                     probs[start] = curr_prob
                     path[start] = end
@@ -72,8 +70,8 @@ class Segmenter:
         for bl in ch_blocks:
             real_blocks.extend([[x[0], x[1]] for x in re.findall(EN_RE, bl[0])[:-1]])
             real_blocks[-1][1] = bl[1]
-        print(real_blocks)
+        # print(real_blocks)
         return real_blocks
 
 
-print(list(Segmenter().cut("近日，党委常委、副校长毕明树在主楼312会议室会见了来访我校的日本名古屋大学财满镇明副校长一行。国际合作与交流处、科学技术研究院、技术研究开发院相关负责人陪同会见。")))
+
